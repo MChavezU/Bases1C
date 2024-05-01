@@ -102,21 +102,20 @@ HAVING porcentaje_votos_mujeres_departamento > porcentaje_votos_hombres_departam
             Por ejemplo: si la región tiene tres departamentos, se debe sumar todos los 
             votos de la región y dividirlo dentro de tres (número de departamentos de la región).*/   
 
-SELECT c.nombre As Pais, nombre_ As Region, ((SUM(b.analfabetos + b.primaria + b.nivelmedio + b.universitario)) / Cantidad_Regiones) AS total_Votos 
+SELECT c.nombre, r.nombre, (Total_votos)/Cantidad_Regiones As Promedio_Votos
 FROM (
-    SELECT 
-        idregion AS idregion_,
-        nombre AS nombre_,
-        idpais AS idpais_,
-        COUNT(nombre) As Cantidad_Regiones 
-    FROM tblregion As r
-    WHERE d.idregion = idregion_
-) AS querys
+    SELECT  
+        idregion As idregion_,
+        idpais As idpais_,
+        SUM(analfabetos + primaria + nivelmedio + universitario) As Total_votos,
+        (SELECT COUNT(nombre) FROM tbldepartamento GROUP BY idregion_) As Cantidad_Regiones
+    FROM 
+        tblpoblacion As b
+        GROUP BY idpais_, idregion_
+)As subquery
 INNER JOIN tblpais c ON idpais_ = c.idpais
-INNER JOIN tbldepartamento d ON idpais_ = d.idpais
-INNER JOIN tblpoblacion b ON idpais_ = b.idpais
-GROUP BY c.nombre, d.nombre, nombre_
-;
+INNER JOIN tblregion r ON idregion_ = r.idregion
+GROUP BY idpais_, idregion_
 
 /*SELECT 7: Desplegar el nombre del país y el porcentaje de votos por raza.*/  
 
