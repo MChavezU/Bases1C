@@ -19,7 +19,7 @@ HAVING MAX(b.analfabetos + b.primaria + b.nivelmedio + b.universitario)
 /*SELECT 2: Desplegar total de votos y porcentaje de votos de mujeres por departamento 
             y país. El ciento por ciento es el total de votos de mujeres por país. 
             (Tip: Todos los porcentajes por departamento de un país deben sumar el 100%)*/    
-       select * from tblpoblacion     
+       /*select * from tblpoblacion */     
             
 SELECT c.nombre, d.nombre,
 SUM(votos_mujeres) AS total_votos_mujeres_departamento,
@@ -42,7 +42,8 @@ INNER JOIN tbldepartamento d ON iddepartamento_ = d.iddepartamento
 GROUP BY c.nombre, d.nombre 
             
 /*SELECT 3: Desplegar el nombre del país, nombre del partido político y número de alcaldías 
-            de los partidos políticos que ganaron más alcaldías por país.*/            
+            de los partidos políticos que ganaron más alcaldías por país.*/ 
+            
 SELECT c.nombre AS Pais, p.nombre As Partido_Politico, b.idmunicipio
 FROM tblpais c
 INNER JOIN tblpoblacion b ON c.idpais = b.idpais
@@ -55,7 +56,7 @@ HAVING MAX(b.analfabetos + b.primaria + b.nivelmedio + b.universitario)
 /*SELECT 4: Desplegar todas las regiones por país en las que predomina la raza indígena. 
             Es decir, hay más votos que las otras razas.*/  
             
-SELECT *FROM tblpoblacion;
+SELECT * FROM tblpoblacion;
 
 SELECT r.nombre As Region, c.nombre As Pais, z.nombre As Raza, (b.analfabetos + b.primaria + b.nivelmedio + b.universitario) As Total_Votos
 FROM tblregion r
@@ -72,11 +73,28 @@ HAVING SUM(b.analfabetos + b.primaria + b.nivelmedio + b.universitario) > (SELEC
 /*SELECT 5: Desplegar el porcentaje de mujeres universitarias y hombres universitarios 
             que votaron por departamento, donde las mujeres universitarias que votaron 
             fueron más que los hombres universitarios que votaron.*/  
-            
 
-/*Porcentaje de mujeres y hombres universitarias por departamento 
-Mujeres > hombres */ 
-
+SELECT d.nombre,
+SUM(total_votos_mujeres) AS total_votos_mujeres_departamento,
+SUM(total_votos_mujeres) * 100.0 / total_votos_departamento AS porcentaje_votos_mujeres_departamento,
+SUM(total_votos_hombres) AS total_votos_hombres_departamento,
+SUM(total_votos_hombres) * 100.0 / total_votos_departamento AS porcentaje_votos_hombres_departamento
+FROM (
+    SELECT 
+        idsexo as idsexo_,
+        idpais as idpais_,
+        iddepartamento as iddepartamento_,
+        SUM((analfabetos+ primaria+ nivelmedio+ universitario)) AS total_votos_departamento,
+        (SELECT SUM((analfabetos + primaria + nivelmedio + universitario)) FROM tblpoblacion WHERE iddepartamento = b.iddepartamento and idsexo = 1) AS total_votos_mujeres,
+        (SELECT SUM((analfabetos + primaria + nivelmedio + universitario)) FROM tblpoblacion WHERE iddepartamento = b.iddepartamento and idsexo = 2) AS total_votos_hombres
+    FROM 
+        tblpoblacion AS b
+        GROUP BY idpais_, iddepartamento_
+) AS subquery 
+INNER JOIN tblpais c ON idpais_ = c.idpais
+INNER JOIN tbldepartamento d ON iddepartamento_ = d.iddepartamento
+GROUP BY c.nombre, d.nombre 
+HAVING porcentaje_votos_mujeres_departamento > porcentaje_votos_hombres_departamento
 
 
 
@@ -84,8 +102,21 @@ Mujeres > hombres */
             Por ejemplo: si la región tiene tres departamentos, se debe sumar todos los 
             votos de la región y dividirlo dentro de tres (número de departamentos de la región).*/   
 
-
-
+SELECT c.nombre As Pais, nombre_ As Region, ((SUM(b.analfabetos + b.primaria + b.nivelmedio + b.universitario)) / Cantidad_Regiones) AS total_Votos 
+FROM (
+    SELECT 
+        idregion AS idregion_,
+        nombre AS nombre_,
+        idpais AS idpais_,
+        COUNT(nombre) As Cantidad_Regiones 
+    FROM tblregion As r
+    WHERE d.idregion = idregion_
+) AS querys
+INNER JOIN tblpais c ON idpais_ = c.idpais
+INNER JOIN tbldepartamento d ON idpais_ = d.idpais
+INNER JOIN tblpoblacion b ON idpais_ = b.idpais
+GROUP BY c.nombre, d.nombre, nombre_
+;
 
 /*SELECT 7: Desplegar el nombre del país y el porcentaje de votos por raza.*/  
 
@@ -110,8 +141,6 @@ SELECT p.nombre, r.nombre,
             Para determinar esto se debe calcular la diferencia de porcentajes de votos
             entre el partido que obtuvo más votos y el partido que obtuvo menos votos*/            
 
-
-    
 SELECT c.nombre, MAX(Diferencia_Votos) As Eleccion_Mas_Peleadas
 FROM (
     SELECT 
@@ -125,7 +154,6 @@ INNER JOIN tblpais c ON idpais_ = c.idpais
 INNER JOIN tbldepartamento d ON iddepartamento_ = d.iddepartamento
 GROUP BY c.nombre, d.nombre
                 
-
 /*SELECT 9: Desplegar el nombre del país, el porcentaje de votos de ese país en el que 
             han votado mayor porcentaje de analfabetas. (tip: solo desplegar un nombre de país,
             el de mayor porcentaje).*/   
