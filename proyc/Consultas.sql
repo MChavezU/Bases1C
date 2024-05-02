@@ -56,18 +56,27 @@ HAVING MAX(b.analfabetos + b.primaria + b.nivelmedio + b.universitario)
 /*SELECT 4: Desplegar todas las regiones por país en las que predomina la raza indígena. 
             Es decir, hay más votos que las otras razas.*/  
             
-SELECT * FROM tblpoblacion;
-
-SELECT r.nombre As Region, c.nombre As Pais, z.nombre As Raza, (b.analfabetos + b.primaria + b.nivelmedio + b.universitario) As Total_Votos
-FROM tblregion r
-INNER JOIN tblpais c ON r.idpais = c.idpais
+SELECT Total_Votos, c.nombre As Pais, 
+SUM(analfabetos_ + primaria_ + nivelmedio_ + universitario_) As Total_Votos_Indigenas
+FROM (
+    SELECT
+        analfabetos As analfabetos_,
+        primaria As primaria_,
+        nivelmedio As nivelmedio_,
+        universitario As universitario_,
+        idpais As idpais_,
+        idraza As idraza_,
+        SUM(analfabetos + primaria + nivelmedio + universitario) As Total_Votos
+    FROM tblpoblacion As b
+    WHERE (idraza = 2)
+    GROUP BY idregion
+) AS querys
+INNER JOIN tblpais c ON idpais_ = c.idpais
 INNER JOIN tblpoblacion b ON c.idpais = b.idpais 
 INNER JOIN tblraza z ON b.idraza  = z.idraza 
-WHERE (z.idraza = 2)
-GROUP BY r.nombre
-HAVING SUM(b.analfabetos + b.primaria + b.nivelmedio + b.universitario) > (SELECT SUM(b.analfabetos + b.primaria + b.nivelmedio + b.universitario))
-;
-
+INNER JOIN tblregion r ON b.idregion = r.idregion
+GROUP BY c.nombre, r.nombre
+HAVING Total_Votos_Indigenas > Total_Votos
 
             
 /*SELECT 5: Desplegar el porcentaje de mujeres universitarias y hombres universitarios 
